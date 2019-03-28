@@ -1,48 +1,60 @@
-<?php
+<?php 
 
-class Login extends CI_Controller
-{
+class Login extends CI_Controller{
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->load->model('m_login');
+	function __construct(){
+		parent::__construct();		
+		$this->load->model('m_login');
+  
+	}
 
-    }
-
-    public function index()
-    {
-        $this->load->view('login_view');
-    }
-
-    public function aksi_login()
-    {
-        $username = $this->input->post('username');
-        $password = $this->input->post('password');
-        $where = array(
-            'username' => $username,
-            'password' => md5($password),
-        );
-        $cek = $this->m_login->cek_login("admin", $where)->num_rows();
-        if ($cek > 0) {
-
-            $data_session = array(
-                'nama' => $username,
-                'status' => "login",
-            );
-
-            $this->session->set_userdata($data_session);
-
-            redirect(base_url("admin"));
-
-        } else {
-            echo "Username dan password salah !";
+	function index(){
+		if ($this->session->userdata('status') === "admin") {
+            redirect(base_url("admin/home"));
+		}
+		else if ($this->session->userdata('status') === "user") {
+            redirect(base_url("user/home"));
         }
-    }
+		$this->load->view('login_view');
+	}
 
-    public function logout()
-    {
-        $this->session->sess_destroy();
-        redirect(base_url('login'));
-    }
+	function aksi_login(){
+		$username = $this->input->post('username');
+		$password = $this->input->post('password');
+		$where = array(
+			'username' => $username,
+			'password' => md5($password)
+			);
+		$query = $this->m_login->cek_login("user",$where);
+		$data = $query->row();
+		$cek = $query->num_rows();
+		if($cek > 0){
+
+			$data_session = array(
+				'nama' => $data->username,
+				'status' => $data->status,
+				'nama_lengkap' => $data->nama_lengkap,
+				'id' => $data->id,
+				);
+
+			$this->session->set_userdata($data_session);
+			if ($data->status === "admin") {
+				redirect(base_url("admin/home"));
+			}
+			else  {
+				redirect(base_url("user/home"));
+			}
+			
+
+		}else{
+			$data["error"]="Invalid User Id and Password combination";
+			$this->load->view('login_view',$data);
+			
+		}
+	}
+
+	function logout(){
+		$this->session->sess_destroy();
+		redirect(base_url('login'));
+	}
 }
